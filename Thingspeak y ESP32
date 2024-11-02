@@ -1,0 +1,120 @@
+#include <WiFi.h>
+#include <WiFiClient.h> //remplazo
+#include "secrets.h"
+#include "ThingSpeak.h" // always include thingspeak header file after other header files and custom macros
+
+//giroscopio
+#include <Wire.h> 
+#include <Adafruit_MPU6050.h> 
+#include <Adafruit_Sensor.h> 
+#include <Adafruit_MPU6050.h> 
+Adafruit_MPU6050 mpu;
+
+char ssid[] = SECRET_SSID;   // your network SSID (name) 
+char pass[] = SECRET_PASS;   // your network password
+int keyIndex = 0;            // your network key Index number (needed only for WEP)
+
+WiFiClient client; //remplazo
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+
+//humo
+const int pinhumo = 34;  // Pin AOUT conectado al GPIO 34 
+String myStatus = "";
+//ritmo cardiaco 
+const int rit = 32; // Pin analógico para el sensor 
+
+//const char * fingerprint = SECRET_SHA1_FINGERPRINT;
+
+void setup() {
+  Serial.begin(115200);  //Initialize serial
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo native USB port only
+  }  
+  WiFi.mode(WIFI_STA);
+  ThingSpeak.begin(client);  // Initialize ThingSpeak
+  
+  //acelerometro
+  Serial.begin(115200); 
+  while (!Serial); 
+
+  // Inicializar I2C y MPU6050 
+  if (!mpu.begin()) { 
+    Serial.println("No se pudo encontrar un sensor MPU6050, revisa las conexiones."); 
+    while (1) { 
+      delay(100); 
+    } 
+  } 
+
+  // Configuración inicial del sensor 
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G); 
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG); 
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ); 
+
+  Serial.println("MPU6050 iniciado correctamente."); 
+ //humo
+  pinMode(pinhumo, INPUT);
+  //ritmo cardiaco 
+  pinMode(rit, INPUT); 
+}
+
+void loop() {
+
+ // Connect or reconnect to WiFi
+  if(WiFi.status() != WL_CONNECTED){
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(SECRET_SSID);
+    while(WiFi.status() != WL_CONNECTED){
+      WiFi.begin(ssid, pass);  // Connect to WPA/WPA2 network. Change this line if using open or WEP network
+      Serial.print(".");
+      delay(5000);     
+    } 
+    Serial.println("\nConnected.");
+
+
+  }
+  //giroscopio
+  sensors_event_t a, g, temp; 
+  mpu.getEvent(&a, &g, &temp); 
+  Serial.print("Acelerómetro X: "); 
+  Serial.print(a.acceleration.x); 
+  Serial.print(", Y: "); 
+  Serial.print(a.acceleration.y); 
+  Serial.print(", Z: "); 
+  Serial.print(a.acceleration.z);
+ //humo
+  int humo = analogRead(pinhumo);
+  Serial.print("HUMO: "); 
+  Serial.print(humo); 
+  //ritmo caridaco
+  int ritc = analogRead(rit); 
+  Serial.print("ritmo cardíaco: "); 
+  Serial.println(ritc); 
+  delay(2000);
+  
+  // set the fields with the values
+  ThingSpeak.setField(1, a.acceleration.x);
+  delay(3000);
+  ThingSpeak.setField(2, a.acceleration.y);
+  delay(3000);
+  ThingSpeak.setField(3, a.acceleration.z);
+  delay(3000);
+  ThingSpeak.setField(4, humo);
+  delay(3000);
+  ThingSpeak.setField(5, ritc);
+  delay(3000);
+  
+  // set the status
+  ThingSpeak.setStatus(myStatus);
+  
+  // write to the ThingSpeak channelsssssssss
+  int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if(x == 200){
+    Serial.println("Channel update successful.");
+  }
+  else{
+    Serial.println("Problem updating channel. HTTP error code " + String(x));
+  }
+  
+  delay(5000); // Wait 20 seconds to update the channel again
+}
