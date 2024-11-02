@@ -1,0 +1,24 @@
+const int analogPin = 34;  // Pin AOUT conectado al GPIO 34 
+const int digitalPin = 35; // Pin DOUT conectado al GPIO 35 (opcional) 
+
+void setup() { 
+  // Inicializar la comunicación serial a 115200 bps 
+  Serial.begin(115200); 
+  // Configurar los pines 
+  pinMode(analogPin, INPUT); 
+  pinMode(digitalPin, INPUT); 
+} 
+
+void loop() { 
+  // Leer el valor analógico 
+  int analogValue = analogRead(analogPin); 
+  // Leer el estado digital 
+  int digitalValue = digitalRead(digitalPin); 
+  // Imprimir los valores en el monitor serial 
+  Serial.print("Valor Analogico: "); 
+  Serial.print(analogValue); 
+  Serial.print("  |  Estado Digital: "); 
+  Serial.println(digitalValue); 
+  // Esperar un poco antes de la siguiente lectura 
+  delay(1000); 
+}
