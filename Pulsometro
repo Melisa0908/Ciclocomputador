@@ -1,0 +1,18 @@
+const int rit = 32; // Pin analógico para el sensor 
+ 
+void setup() { 
+  // Inicializar la comunicación serial 
+  Serial.begin(9600); 
+  // Configurar el pin del sensor como entrada 
+  pinMode(rit, INPUT); 
+} 
+
+void loop() { 
+  // Leer el valor analógico del sensor 
+  int ritc = analogRead(rit); 
+  // Imprimir el valor en el monitor serial 
+  Serial.print("Valor del sensor de ritmo cardíaco: "); 
+  Serial.println(ritc); 
+  // Esperar 100ms para la siguiente lectura 
+  delay(2000); 
+}
